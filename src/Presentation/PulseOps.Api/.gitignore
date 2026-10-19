@@ -1,0 +1,11 @@
+## .NET / Visual Studio
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+
+## Loglar & Ortam Dosyaları
+*.log
+appsettings.Development.json
