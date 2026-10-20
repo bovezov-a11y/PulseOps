@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PulseOps.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialDatabaseSetup : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -31,16 +31,13 @@ namespace PulseOps.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
-                    Url = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    CheckType = table.Column<int>(type: "integer", nullable: false),
-                    IntervalInSeconds = table.Column<int>(type: "integer", nullable: false),
-                    TimeoutInMilliseconds = table.Column<int>(type: "integer", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Url = table.Column<string>(type: "text", nullable: false),
+                    CheckIntervalSeconds = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    LastStatus = table.Column<int>(type: "integer", nullable: false),
                     OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    OrganizationId1 = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -51,6 +48,11 @@ namespace PulseOps.Infrastructure.Migrations
                         principalTable: "Organizations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MonitoredServices_Organizations_OrganizationId1",
+                        column: x => x.OrganizationId1,
+                        principalTable: "Organizations",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -64,6 +66,8 @@ namespace PulseOps.Infrastructure.Migrations
                     LastName = table.Column<string>(type: "text", nullable: false),
                     Role = table.Column<string>(type: "text", nullable: false),
                     OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RefreshToken = table.Column<string>(type: "text", nullable: true),
+                    RefreshTokenExpiryTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
@@ -79,50 +83,22 @@ namespace PulseOps.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "AlertRules",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    MonitoredServiceId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RuleName = table.Column<string>(type: "text", nullable: false),
-                    ThresholdResponseTimeMs = table.Column<int>(type: "integer", nullable: false),
-                    ConsecutiveFailuresCount = table.Column<int>(type: "integer", nullable: false),
-                    NotificationChannel = table.Column<string>(type: "text", nullable: false),
-                    Destination = table.Column<string>(type: "text", nullable: false),
-                    IsEnabled = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AlertRules", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_AlertRules_MonitoredServices_MonitoredServiceId",
-                        column: x => x.MonitoredServiceId,
-                        principalTable: "MonitoredServices",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "MetricLogs",
+                name: "ServiceHealthLogs",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     MonitoredServiceId = table.Column<Guid>(type: "uuid", nullable: false),
                     StatusCode = table.Column<int>(type: "integer", nullable: false),
-                    ResponseTimeMs = table.Column<double>(type: "double precision", nullable: false),
-                    IsSuccess = table.Column<bool>(type: "boolean", nullable: false),
+                    IsHealthy = table.Column<bool>(type: "boolean", nullable: false),
+                    ResponseTimeMs = table.Column<long>(type: "bigint", nullable: false),
                     ErrorMessage = table.Column<string>(type: "text", nullable: true),
-                    Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    CheckedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MetricLogs", x => x.Id);
+                    table.PrimaryKey("PK_ServiceHealthLogs", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_MetricLogs_MonitoredServices_MonitoredServiceId",
+                        name: "FK_ServiceHealthLogs_MonitoredServices_MonitoredServiceId",
                         column: x => x.MonitoredServiceId,
                         principalTable: "MonitoredServices",
                         principalColumn: "Id",
@@ -130,19 +106,19 @@ namespace PulseOps.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_AlertRules_MonitoredServiceId",
-                table: "AlertRules",
-                column: "MonitoredServiceId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MetricLogs_MonitoredServiceId",
-                table: "MetricLogs",
-                column: "MonitoredServiceId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_MonitoredServices_OrganizationId",
                 table: "MonitoredServices",
                 column: "OrganizationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MonitoredServices_OrganizationId1",
+                table: "MonitoredServices",
+                column: "OrganizationId1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ServiceHealthLogs_MonitoredServiceId",
+                table: "ServiceHealthLogs",
+                column: "MonitoredServiceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_OrganizationId",
@@ -154,10 +130,7 @@ namespace PulseOps.Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "AlertRules");
-
-            migrationBuilder.DropTable(
-                name: "MetricLogs");
+                name: "ServiceHealthLogs");
 
             migrationBuilder.DropTable(
                 name: "Users");

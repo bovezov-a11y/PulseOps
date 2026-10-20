@@ -1,24 +1,33 @@
-namespace PulseOps.Infrastructure.Persistence;
-
 using Microsoft.EntityFrameworkCore;
 using PulseOps.Domain.Entities;
 
+namespace PulseOps.Infrastructure.Persistence;
+
 public class ApplicationDbContext : DbContext
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
-    {
-    }
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-    public DbSet<PulseOps.Domain.Entities.Organization> Organizations => Set<PulseOps.Domain.Entities.Organization>();
-    public DbSet<PulseOps.Domain.Entities.User> Users => Set<PulseOps.Domain.Entities.User>();
-    public DbSet<PulseOps.Domain.Entities.MonitoredService> MonitoredServices => Set<PulseOps.Domain.Entities.MonitoredService>();
-    public DbSet<PulseOps.Domain.Entities.MetricLog> MetricLogs => Set<PulseOps.Domain.Entities.MetricLog>();
-    public DbSet<PulseOps.Domain.Entities.AlertRule> AlertRules => Set<PulseOps.Domain.Entities.AlertRule>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<MonitoredService> MonitoredServices => Set<MonitoredService>();
+    public DbSet<ServiceHealthLog> ServiceHealthLogs => Set<ServiceHealthLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+        // MonitoredService - Organization ilişkisi
+        modelBuilder.Entity<MonitoredService>()
+            .HasOne(m => m.Organization)
+            .WithMany()
+            .HasForeignKey(m => m.OrganizationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // ServiceHealthLog - MonitoredService ilişkisi
+        modelBuilder.Entity<ServiceHealthLog>()
+            .HasOne(l => l.MonitoredService)
+            .WithMany(m => m.HealthLogs)
+            .HasForeignKey(l => l.MonitoredServiceId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

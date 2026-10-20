@@ -12,8 +12,8 @@ using PulseOps.Infrastructure.Persistence;
 namespace PulseOps.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261018192849_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20261019150240_InitialDatabaseSetup")]
+    partial class InitialDatabaseSetup
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,129 +25,40 @@ namespace PulseOps.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("PulseOps.Domain.Entities.AlertRule", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("ConsecutiveFailuresCount")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Destination")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("MonitoredServiceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("NotificationChannel")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("RuleName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("ThresholdResponseTimeMs")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MonitoredServiceId");
-
-                    b.ToTable("AlertRules");
-                });
-
-            modelBuilder.Entity("PulseOps.Domain.Entities.MetricLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ErrorMessage")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsSuccess")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("MonitoredServiceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<double>("ResponseTimeMs")
-                        .HasColumnType("double precision");
-
-                    b.Property<int>("StatusCode")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MonitoredServiceId");
-
-                    b.ToTable("MetricLogs");
-                });
-
             modelBuilder.Entity("PulseOps.Domain.Entities.MonitoredService", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<int>("CheckType")
+                    b.Property<int>("CheckIntervalSeconds")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("IntervalInSeconds")
-                        .HasColumnType("integer");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("LastStatus")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("TimeoutInMilliseconds")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<Guid?>("OrganizationId1")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Url")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.HasIndex("OrganizationId");
+
+                    b.HasIndex("OrganizationId1");
 
                     b.ToTable("MonitoredServices");
                 });
@@ -175,6 +86,37 @@ namespace PulseOps.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Organizations");
+                });
+
+            modelBuilder.Entity("PulseOps.Domain.Entities.ServiceHealthLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsHealthy")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("MonitoredServiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("ResponseTimeMs")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("StatusCode")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MonitoredServiceId");
+
+                    b.ToTable("ServiceHealthLogs");
                 });
 
             modelBuilder.Entity("PulseOps.Domain.Entities.User", b =>
@@ -205,6 +147,12 @@ namespace PulseOps.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("RefreshTokenExpiryTime")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("text");
@@ -219,37 +167,30 @@ namespace PulseOps.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("PulseOps.Domain.Entities.AlertRule", b =>
-                {
-                    b.HasOne("PulseOps.Domain.Entities.MonitoredService", "MonitoredService")
-                        .WithMany("AlertRules")
-                        .HasForeignKey("MonitoredServiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("MonitoredService");
-                });
-
-            modelBuilder.Entity("PulseOps.Domain.Entities.MetricLog", b =>
-                {
-                    b.HasOne("PulseOps.Domain.Entities.MonitoredService", "MonitoredService")
-                        .WithMany("MetricLogs")
-                        .HasForeignKey("MonitoredServiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("MonitoredService");
-                });
-
             modelBuilder.Entity("PulseOps.Domain.Entities.MonitoredService", b =>
                 {
                     b.HasOne("PulseOps.Domain.Entities.Organization", "Organization")
-                        .WithMany("MonitoredServices")
+                        .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("PulseOps.Domain.Entities.Organization", null)
+                        .WithMany("MonitoredServices")
+                        .HasForeignKey("OrganizationId1");
+
                     b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("PulseOps.Domain.Entities.ServiceHealthLog", b =>
+                {
+                    b.HasOne("PulseOps.Domain.Entities.MonitoredService", "MonitoredService")
+                        .WithMany("HealthLogs")
+                        .HasForeignKey("MonitoredServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MonitoredService");
                 });
 
             modelBuilder.Entity("PulseOps.Domain.Entities.User", b =>
@@ -265,9 +206,7 @@ namespace PulseOps.Infrastructure.Migrations
 
             modelBuilder.Entity("PulseOps.Domain.Entities.MonitoredService", b =>
                 {
-                    b.Navigation("AlertRules");
-
-                    b.Navigation("MetricLogs");
+                    b.Navigation("HealthLogs");
                 });
 
             modelBuilder.Entity("PulseOps.Domain.Entities.Organization", b =>

@@ -1,21 +1,17 @@
 namespace PulseOps.Domain.Entities;
 
-using PulseOps.Domain.Common;
-using PulseOps.Domain.Enums;
-
-public class MonitoredService : BaseEntity
+public class MonitoredService
 {
-    public string Name { get; set; } = default!;
-    public string Url { get; set; } = default!;
-    public CheckType CheckType { get; set; } = CheckType.Https;
-    public int IntervalInSeconds { get; set; } = 30;
-    public int TimeoutInMilliseconds { get; set; } = 5000;
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Name { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+    public int CheckIntervalSeconds { get; set; } = 60;
     public bool IsActive { get; set; } = true;
-    public ServiceStatus LastStatus { get; set; } = ServiceStatus.Unknown;
 
     public Guid OrganizationId { get; set; }
-    public Organization Organization { get; set; } = default!;
+    public Organization? Organization { get; set; }
 
-    public ICollection<MetricLog> MetricLogs { get; set; } = new List<MetricLog>();
-    public ICollection<AlertRule> AlertRules { get; set; } = new List<AlertRule>();
+    public ICollection<ServiceHealthLog> HealthLogs { get; set; } = new List<ServiceHealthLog>();
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

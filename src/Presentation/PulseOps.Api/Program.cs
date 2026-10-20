@@ -9,21 +9,44 @@ using PulseOps.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 1. Controller Servisleri
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Swagger Authorize Butonu Yapılandırması
+// 2. JWT Authentication & Default Scheme Ayarları
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "PulseOpsApi",
+        ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? "PulseOpsClient",
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"] ?? "super_secret_key_pulseops_123456789_secure"))
+    };
+});
+
+// 3. Swagger ve JWT Bearer Desteği Yapılandırması
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "PulseOps API", Version = "v1" });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
         Name = "Authorization",
-        In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT Token değerinizi 'Bearer {token}' formatında girin."
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -42,58 +65,31 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// DbContext (PostgreSQL)
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+// 4. Veritabanı Bağlantı Kaydı (PostgreSQL - Port 5434)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? "Host=localhost;Port=5434;Database=pulseops_db;Username=postgres;Password=postgres";
 
-// Dependency Injection Servisleri
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+// 5. Servis Kayıtları (Dependency Injection)
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
-// JWT Authentication Yapılandırması
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["Secret"]!;
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerSchemeOptions();
-    options.DefaultChallengeScheme = JwtBearerSchemeOptions();
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
-    };
-});
-
-static string JwtBearerSchemeOptions() => JwtBearerDefaults.AuthenticationScheme;
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
-});
+// 6. Background Monitoring Worker Kaydı
+builder.Services.AddHostedService<MonitoringBackgroundService>();
 
 var app = builder.Build();
 
+// 7. HTTP Request Pipeline Yapılandırması
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowAll");
+app.UseHttpsRedirection();
 
+// Sıralama önemlidir: Önce Authentication, sonra Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
