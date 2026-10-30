@@ -6,6 +6,6 @@ obj/
 *.user
 *.suo
 
-## Loglar & Ortam Dosyaları
+## Logs and local settings
 *.log
 appsettings.Development.json

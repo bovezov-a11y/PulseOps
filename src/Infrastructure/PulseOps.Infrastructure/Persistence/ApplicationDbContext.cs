@@ -16,14 +16,14 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // MonitoredService - Organization ilişkisi
+        // MonitoredService - Organization relationship
         modelBuilder.Entity<MonitoredService>()
             .HasOne(m => m.Organization)
             .WithMany()
             .HasForeignKey(m => m.OrganizationId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // ServiceHealthLog - MonitoredService ilişkisi
+        // ServiceHealthLog - MonitoredService relationship
         modelBuilder.Entity<ServiceHealthLog>()
             .HasOne(l => l.MonitoredService)
             .WithMany(m => m.HealthLogs)

@@ -25,7 +25,7 @@ public class AuthController : ControllerBase
     {
         var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
         if (existingUser != null)
-            return BadRequest(new { Message = "Bu e-posta adresi zaten kullanımda." });
+            return BadRequest(new { Message = "This email address is already in use." });
 
         var organization = new Organization
         {
@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
         _context.Organizations.Add(organization);
         await _context.SaveChangesAsync();
 
-        // BCrypt ile güvenli şifre hash'leme
+        // Hash the password with BCrypt
         string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         var user = new User
@@ -57,7 +57,7 @@ public class AuthController : ControllerBase
 
         return Ok(new
         {
-            Message = "Kullanıcı başarıyla kaydedildi.",
+            Message = "User registered successfully.",
             Token = token,
             UserId = user.Id,
             OrganizationId = organization.Id
@@ -71,17 +71,17 @@ public class AuthController : ControllerBase
             .Include(u => u.Organization)
             .FirstOrDefaultAsync(u => u.Email == request.Email);
 
-        // BCrypt ile hash doğrulaması
+        // Verify the password against its BCrypt hash
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
         {
-            return Unauthorized(new { Message = "E-posta veya şifre hatalı." });
+            return Unauthorized(new { Message = "Invalid email or password." });
         }
 
         var token = _jwtTokenGenerator.GenerateToken(user);
 
         return Ok(new
         {
-            Message = "Giriş başarılı.",
+            Message = "Login successful.",
             Token = token,
             User = new
             {

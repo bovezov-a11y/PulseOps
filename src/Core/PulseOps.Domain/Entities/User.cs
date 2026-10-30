@@ -13,7 +13,7 @@ public class User : BaseEntity
     public Guid OrganizationId { get; set; }
     public Organization? Organization { get; set; }
 
-    // Refresh Token Yapısı
+    // Refresh token
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiryTime { get; set; }
 }

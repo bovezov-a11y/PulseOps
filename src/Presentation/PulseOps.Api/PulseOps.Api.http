@@ -1,6 +1,38 @@
 @PulseOps.Api_HostAddress = http://localhost:5187
 
-GET {{PulseOps.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Register a user and their organization
+POST {{PulseOps.Api_HostAddress}}/api/Auth/register
+Content-Type: application/json
 
-###
+{
+  "firstName": "Ada",
+  "lastName": "Lovelace",
+  "email": "ada@example.com",
+  "password": "change-me-123",
+  "organizationName": "Example Org"
+}
+
+### Log in and copy the token from the response
+POST {{PulseOps.Api_HostAddress}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "email": "ada@example.com",
+  "password": "change-me-123"
+}
+
+### Register a service to monitor
+@token = paste-the-token-here
+POST {{PulseOps.Api_HostAddress}}/api/Services
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "GitHub",
+  "url": "https://github.com",
+  "checkIntervalSeconds": 60
+}
+
+### List your organization's services with their latest check
+GET {{PulseOps.Api_HostAddress}}/api/Services
+Authorization: Bearer {{token}}

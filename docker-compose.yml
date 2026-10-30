@@ -7,9 +7,9 @@ services:
     environment:
       POSTGRES_DB: pulseops_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Password123!
+      POSTGRES_PASSWORD: postgres # local development only
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always

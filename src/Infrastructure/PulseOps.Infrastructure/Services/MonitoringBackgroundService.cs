@@ -23,7 +23,7 @@ public class MonitoringBackgroundService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("PulseOps Monitoring Service başlatıldı.");
+        _logger.LogInformation("PulseOps monitoring service started.");
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -45,10 +45,10 @@ public class MonitoringBackgroundService : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Monitoring döngüsünde hata oluştu.");
+                _logger.LogError(ex, "Error in the monitoring loop.");
             }
 
-            // 15 saniyede bir tarama yap
+            // Check every 15 seconds
             await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
         }
     }

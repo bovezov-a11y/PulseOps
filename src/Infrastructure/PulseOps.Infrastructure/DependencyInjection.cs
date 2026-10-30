@@ -21,7 +21,7 @@ public static class DependencyInjection
 
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
-        // JWT Authentication Ayarları
+        // JWT authentication
         var jwtSettings = configuration.GetSection("JwtSettings");
         var secret = jwtSettings["Secret"];
 

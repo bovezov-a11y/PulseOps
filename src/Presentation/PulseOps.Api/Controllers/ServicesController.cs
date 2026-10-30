@@ -10,7 +10,7 @@ namespace PulseOps.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // Korumalı endpoint: Sadece JWT Token sahipleri erişebilir
+[Authorize] // Protected: requires a valid JWT
 public class ServicesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -26,7 +26,7 @@ public class ServicesController : ControllerBase
         var orgIdClaim = User.FindFirst("organizationId")?.Value;
         if (orgIdClaim == null || !Guid.TryParse(orgIdClaim, out var organizationId))
         {
-            return Unauthorized("Organizasyon bilgisi bulunamadı.");
+            return Unauthorized("Organization claim is missing from the token.");
         }
 
         var service = new MonitoredService
@@ -57,7 +57,7 @@ public class ServicesController : ControllerBase
         var orgIdClaim = User.FindFirst("organizationId")?.Value;
         if (orgIdClaim == null || !Guid.TryParse(orgIdClaim, out var organizationId))
         {
-            return Unauthorized("Organizasyon bilgisi bulunamadı.");
+            return Unauthorized("Organization claim is missing from the token.");
         }
 
         var services = await _context.MonitoredServices
